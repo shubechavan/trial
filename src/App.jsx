@@ -108,6 +108,9 @@ export default function App() {
             />
           </div>
         </section>
+
+        {/* Analysis Journal */}
+        <AnalysisJournalCard />
       </div>
     </div>
   );
@@ -335,6 +338,140 @@ function LockedModuleCard({ phase, title, unlock }) {
   );
 }
 
+const JOURNAL_PROMPTS = [
+  { label: "What shifted today", cls: "border-emerald-200 bg-emerald-50 text-emerald-700" },
+  { label: "Where I drifted", cls: "border-rose-200 bg-rose-50 text-rose-600" },
+  { label: "One win, one lesson", cls: "border-amber-200 bg-amber-50 text-amber-700" },
+  { label: "What pattern is forming", cls: "border-indigo-200 bg-indigo-50 text-indigo-700" },
+];
+
+function AnalysisJournalCard() {
+  const XP = 2;
+  const MAX = 500;
+  const [entry, setEntry] = useState("");
+  const [week, setWeek] = useState(0);
+  const [bursts, setBursts] = useState([]);
+  const idRef = useRef(0);
+
+  const save = () => {
+    if (!entry.trim()) return;
+    // fire the same +XP blob burst as the habit cards, over the entry box
+    const id = idRef.current++;
+    setBursts((b) => [...b, id]);
+    window.setTimeout(() => setBursts((b) => b.filter((x) => x !== id)), 1350);
+    setWeek((w) => Math.min(7, w + 1));
+    setEntry("");
+  };
+
+  return (
+    <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <IconTile from="#a78bfa" to="#6d28d9">
+          <BookIcon className="h-6 w-6" />
+        </IconTile>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-slate-800">Analysis Journal</h3>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-600">
+              Unlocked
+            </span>
+          </div>
+          <p className="text-xs leading-snug text-slate-500">
+            Today's signal becomes tomorrow's pattern. Capture before it fades.
+          </p>
+        </div>
+      </div>
+
+      {/* Prompts */}
+      <div className="mt-4 flex items-center justify-between">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          Prompts to start
+        </span>
+        <span className="text-[11px] text-slate-400">tap to seed</span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {JOURNAL_PROMPTS.map((p) => (
+          <button
+            key={p.label}
+            type="button"
+            onClick={() => setEntry(p.label + ": ")}
+            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition active:scale-95 ${p.cls}`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Today's entry */}
+      <div className="mt-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+        Today's entry
+      </div>
+      <div className="relative mt-2">
+        {/* +XP blob burst on save */}
+        {bursts.map((id) => (
+          <span
+            key={id}
+            aria-hidden="true"
+            className="lv-blob lv-xp-num pointer-events-none absolute left-1/2 top-1/2 z-30 flex items-center justify-center whitespace-nowrap px-4 py-2.5 text-lg font-extrabold leading-none text-white shadow-lg"
+            style={{
+              backgroundColor: "#4caf7d",
+              borderRadius: "60% 40% 55% 45% / 45% 55% 40% 60%",
+            }}
+          >
+            +{XP} XP
+          </span>
+        ))}
+        <textarea
+          value={entry}
+          onChange={(e) => setEntry(e.target.value.slice(0, MAX))}
+          rows={3}
+          placeholder="What is one thing you noticed about your face, breath, or posture today?"
+          className="w-full resize-none rounded-2xl border border-slate-200 bg-white p-3 pb-7 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200"
+        />
+        <span className="pointer-events-none absolute bottom-2.5 right-3 text-[11px] text-slate-400">
+          {entry.length} / {MAX}
+        </span>
+      </div>
+
+      {/* This week */}
+      <div className="mt-3 flex items-center gap-3">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          This week
+        </span>
+        <div className="flex items-center gap-1.5">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <span
+              key={i}
+              className={`h-2.5 w-2.5 rounded-full ${
+                i < week ? "bg-emerald-500" : "bg-slate-200"
+              }`}
+            />
+          ))}
+        </div>
+        <span className="text-sm font-bold text-indigo-600">{week} / 7</span>
+        <span className="ml-auto rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-600">
+          +{XP} XP
+        </span>
+      </div>
+
+      {/* Save */}
+      <button
+        type="button"
+        onClick={save}
+        disabled={!entry.trim()}
+        className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition ${
+          entry.trim()
+            ? "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.98]"
+            : "cursor-not-allowed bg-slate-200 text-slate-400"
+        }`}
+      >
+        Save entry →
+      </button>
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /*  Icons (white line icons for the gradient tiles)                    */
 /* ------------------------------------------------------------------ */
@@ -429,6 +566,16 @@ function FlameIcon({ className = "h-5 w-5" }) {
     </svg>
   );
 }
+function BookIcon({ className = "h-6 w-6" }) {
+  return (
+    <svg {...S({ className })}>
+      <path d="M12 7v13" />
+      <path d="M3 5.5c2.5-1 5.5-1 9 1v13c-3.5-2-6.5-2-9-1z" />
+      <path d="M21 5.5c-2.5-1-5.5-1-9 1v13c3.5-2 6.5-2 9-1z" />
+    </svg>
+  );
+}
+
 function LockIcon({ className = "h-4 w-4" }) {
   return (
     <svg {...S({ className })}>
