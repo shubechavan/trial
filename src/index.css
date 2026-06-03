@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Light blue / mint dashboard backdrop (matches The Levi System) */
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: linear-gradient(180deg, #eaf3fb 0%, #eef6f1 100%);
+  min-height: 100vh;
+}
