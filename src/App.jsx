@@ -1,5 +1,59 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import BonusTrackerCard from "./BonusTrackerCard.jsx";
+
+/* Shared confetti XP burst: bold "+XP" text rises while specks erupt upward. */
+function XpConfetti({ xp, color = "#4caf7d", colorLight = "#8fd9b3" }) {
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: 22 }, (_, i) => {
+        const angle = (i / 22) * Math.PI * 2 + Math.random() * 0.5;
+        const dist = 50 + Math.random() * 70;
+        const palette = [color, colorLight, "#ffffff"];
+        return {
+          tx: Math.cos(angle) * dist,
+          ty: Math.sin(angle) * dist - (30 + Math.random() * 40),
+          rot: Math.random() * 540 - 270,
+          w: 4 + Math.random() * 3,
+          h: 9 + Math.random() * 7,
+          color: palette[i % 3],
+          delay: Math.random() * 60,
+        };
+      }),
+    [color, colorLight]
+  );
+
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2"
+    >
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          className="lv-confetti absolute block"
+          style={{
+            left: 0,
+            top: 0,
+            width: p.w,
+            height: p.h,
+            backgroundColor: p.color,
+            borderRadius: "1px",
+            animationDelay: `${p.delay}ms`,
+            "--tx": `${p.tx}px`,
+            "--ty": `${p.ty}px`,
+            "--rot": `${p.rot}deg`,
+          }}
+        />
+      ))}
+      <span
+        className="lv-rise lv-xp-num absolute left-1/2 top-1/2 whitespace-nowrap text-xl font-extrabold"
+        style={{ color }}
+      >
+        +{xp} XP
+      </span>
+    </div>
+  );
+}
 
 /* ================================================================== */
 /*  The Levi System — Tracker dashboard (recreated to match the app)  */
@@ -188,19 +242,9 @@ function HabitCard({
         bounce ? "lv-card-bounce" : "",
       ].join(" ")}
     >
-      {/* +XP blob burst — green splat, same as the bonus card */}
+      {/* +XP confetti burst — bold green text + specks, same everywhere */}
       {bursts.map((id) => (
-        <span
-          key={id}
-          aria-hidden="true"
-          className="lv-blob lv-xp-num pointer-events-none absolute left-1/2 top-1/2 z-30 flex items-center justify-center whitespace-nowrap px-3.5 py-2 text-base font-extrabold leading-none text-white shadow-lg"
-          style={{
-            backgroundColor: "#4caf7d",
-            borderRadius: "60% 40% 55% 45% / 45% 55% 40% 60%",
-          }}
-        >
-          +{xp} XP
-        </span>
+        <XpConfetti key={id} xp={xp} />
       ))}
 
       {/* +XP incentive pill — shown until the habit is completed */}
@@ -408,19 +452,9 @@ function AnalysisJournalCard() {
         Today's entry
       </div>
       <div className="relative mt-2">
-        {/* +XP blob burst on save */}
+        {/* +XP confetti burst on save */}
         {bursts.map((id) => (
-          <span
-            key={id}
-            aria-hidden="true"
-            className="lv-blob lv-xp-num pointer-events-none absolute left-1/2 top-1/2 z-30 flex items-center justify-center whitespace-nowrap px-4 py-2.5 text-lg font-extrabold leading-none text-white shadow-lg"
-            style={{
-              backgroundColor: "#4caf7d",
-              borderRadius: "60% 40% 55% 45% / 45% 55% 40% 60%",
-            }}
-          >
-            +{XP} XP
-          </span>
+          <XpConfetti key={id} xp={XP} />
         ))}
         <textarea
           value={entry}

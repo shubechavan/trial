@@ -62,14 +62,19 @@ const DEMO_TASKS = [
 /* ------------------------------------------------------------------ */
 
 const STYLE = `
-/* Blob splat (≈1.3s): pop 0→1.3→1 (~0.3s), hold ~0.5s, float up -80px + fade.
-   translate(-50%,-50%) keeps it centered on the card while it scales. */
-@keyframes lv-blob {
-  0%   { transform: translate(-50%, -50%) scale(0);   opacity: 0; }
-  18%  { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
-  30%  { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
-  62%  { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
-  100% { transform: translate(-50%, calc(-50% - 80px)) scale(1); opacity: 0; }
+/* Confetti XP burst: bold "+XP" text rises while colored specks erupt upward. */
+@keyframes lv-confetti {
+  0%   { transform: translate(0, 0) rotate(0deg) scale(0.6); opacity: 0; }
+  12%  { transform: translate(calc(var(--tx) * 0.4), calc(var(--ty) * 0.4)) rotate(calc(var(--rot) * 0.3)) scale(1); opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: translate(var(--tx), calc(var(--ty) - 20px)) rotate(var(--rot)) scale(0.7); opacity: 0; }
+}
+@keyframes lv-rise {
+  0%   { transform: translate(-50%, -50%) scale(0);    opacity: 0; }
+  15%  { transform: translate(-50%, -50%) scale(1.25); opacity: 1; }
+  28%  { transform: translate(-50%, -50%) scale(1);    opacity: 1; }
+  58%  { transform: translate(-50%, -50%) scale(1);    opacity: 1; }
+  100% { transform: translate(-50%, calc(-50% - 72px)) scale(1); opacity: 0; }
 }
 /* Quick satisfying card bounce on completion */
 @keyframes lv-card-bounce {
@@ -77,16 +82,18 @@ const STYLE = `
   50%  { transform: scale(1.03); }
   100% { transform: scale(1); }
 }
-.lv-blob        { animation: lv-blob 1300ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.lv-confetti    { animation: lv-confetti 850ms cubic-bezier(0.18, 0.7, 0.3, 1) forwards; }
+.lv-rise        { animation: lv-rise 1300ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 .lv-card-bounce { animation: lv-card-bounce 440ms cubic-bezier(0.34, 1.56, 0.64, 1); }
-.lv-xp-num      { text-shadow: 0 1px 3px rgba(0,0,0,0.28); }
+.lv-xp-num      { text-shadow: 0 1px 2px rgba(255,255,255,0.9), 0 1px 4px rgba(0,0,0,0.15); }
 
-/* Reduced motion: no scale/float/bounce — the blob simply fades in + out. */
-@keyframes lv-blob-rm {
+/* Reduced motion: text fades in place, no specks/scale/float/bounce. */
+@keyframes lv-rise-rm {
   0% { opacity: 0; } 20% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .lv-blob        { animation: lv-blob-rm 1200ms ease-out forwards; transform: translate(-50%, -50%); }
+  .lv-rise        { animation: lv-rise-rm 1200ms ease-out forwards; transform: translate(-50%, -50%); }
+  .lv-confetti    { display: none; }
   .lv-card-bounce { animation: none; }
 }
 `;
@@ -102,17 +109,31 @@ export default function BonusTrackerCard() {
 
   // status: "idle" | "pending" | "done"
   const [status, setStatus] = useState("idle");
-  const [bursts, setBursts] = useState([]); // ephemeral blob splats {id}
+  const [bursts, setBursts] = useState([]); // ephemeral confetti bursts {id, pieces}
   const burstId = useRef(0);
 
-  // Fire a center blob splat, then unmount it after the ~1.3s animation.
+  // Fire a confetti burst (bold "+XP" text + upward specks), then unmount it.
   const fireBlob = useCallback(() => {
     const id = burstId.current++;
-    setBursts((b) => [...b, { id }]);
+    const pieces = Array.from({ length: 22 }, (_, i) => {
+      const angle = (i / 22) * Math.PI * 2 + Math.random() * 0.5;
+      const dist = 52 + Math.random() * 75;
+      const palette = [tier.accent, tier.accentLight, "#ffffff"];
+      return {
+        tx: Math.cos(angle) * dist,
+        ty: Math.sin(angle) * dist - (32 + Math.random() * 42),
+        rot: Math.random() * 540 - 270,
+        w: 4 + Math.random() * 3,
+        h: 9 + Math.random() * 7,
+        color: palette[i % 3],
+        delay: Math.random() * 60,
+      };
+    });
+    setBursts((b) => [...b, { id, pieces }]);
     window.setTimeout(() => {
       setBursts((b) => b.filter((p) => p.id !== id));
     }, 1350);
-  }, []);
+  }, [tier.accent, tier.accentLight]);
 
   const handleComplete = () => {
     if (status !== "idle") return;
@@ -157,19 +178,38 @@ export default function BonusTrackerCard() {
           background: `linear-gradient(135deg, #ffffff 55%, ${tier.accent}12 100%)`,
         }}
       >
-        {/* Blob splat — centered, full opacity (sits above the muted content) */}
+        {/* Confetti burst — centered, full opacity (above the muted content) */}
         {bursts.map((b) => (
-          <span
+          <div
             key={b.id}
             aria-hidden="true"
-            className="lv-blob lv-xp-num pointer-events-none absolute left-1/2 top-1/2 z-30 flex items-center justify-center whitespace-nowrap px-6 py-4 text-xl font-extrabold leading-none text-white shadow-lg"
-            style={{
-              backgroundColor: tier.accent,
-              borderRadius: "60% 40% 55% 45% / 45% 55% 40% 60%",
-            }}
+            className="pointer-events-none absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2"
           >
-            +{tier.xp} XP
-          </span>
+            {b.pieces.map((p, i) => (
+              <span
+                key={i}
+                className="lv-confetti absolute block"
+                style={{
+                  left: 0,
+                  top: 0,
+                  width: p.w,
+                  height: p.h,
+                  backgroundColor: p.color,
+                  borderRadius: "1px",
+                  animationDelay: `${p.delay}ms`,
+                  "--tx": `${p.tx}px`,
+                  "--ty": `${p.ty}px`,
+                  "--rot": `${p.rot}deg`,
+                }}
+              />
+            ))}
+            <span
+              className="lv-rise lv-xp-num absolute left-1/2 top-1/2 whitespace-nowrap text-xl font-extrabold"
+              style={{ color: tier.accent }}
+            >
+              +{tier.xp} XP
+            </span>
+          </div>
         ))}
 
         {/* CONTENT (mutes on completion; blob stays vivid above it) */}
