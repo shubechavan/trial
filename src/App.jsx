@@ -1,3 +1,4 @@
+import { useState, useRef } from "react";
 import BonusTrackerCard from "./BonusTrackerCard.jsx";
 
 /* ================================================================== */
@@ -30,7 +31,7 @@ export default function App() {
         <section className="space-y-3">
           <div className="grid grid-cols-3 gap-3">
             <HabitCard
-              icon={<LeafIcon />}
+              icon={<AppleIcon />}
               from="#34d399"
               to="#059669"
               tint="from-emerald-50"
@@ -45,16 +46,16 @@ export default function App() {
               tint="from-teal-50"
               title="CTR"
               desc="Fascia release"
-              checked
+              defaultChecked
             />
             <HabitCard
-              icon={<DropletPlusIcon />}
+              icon={<TongueIcon />}
               from="#fb923c"
               to="#ea580c"
               tint="from-orange-50"
               title="RLD"
               desc="AERO support"
-              checked
+              defaultChecked
             />
           </div>
 
@@ -69,16 +70,16 @@ export default function App() {
               tint="from-sky-50"
               title="SUPPLEMENTS"
               desc="Daily supplement stack"
-              checked
+              defaultChecked
             />
             <HabitCard
-              icon={<BrowIcon />}
+              icon={<HandIcon />}
               from="#a78bfa"
               to="#7c3aed"
               tint="from-violet-50"
               title="EYEBROW PROTOCOL"
               desc="Supraorbital ridge release"
-              checked
+              defaultChecked
             />
             <div className="hidden sm:block" aria-hidden="true" />
           </div>
@@ -142,19 +143,80 @@ function Checkbox({ checked }) {
   );
 }
 
-function HabitCard({ icon, from, to, tint, title, desc, checked = false, xp }) {
+function HabitCard({
+  icon,
+  from,
+  to,
+  tint,
+  title,
+  desc,
+  defaultChecked = false,
+  xp = 4,
+}) {
+  const [checked, setChecked] = useState(defaultChecked);
+  const [bursts, setBursts] = useState([]);
+  const [bounce, setBounce] = useState(false);
+  const idRef = useRef(0);
+
+  const toggle = () => {
+    setChecked((wasChecked) => {
+      const next = !wasChecked;
+      if (next) {
+        // checking the habit → fire the same +XP blob burst as the bonus card
+        const id = idRef.current++;
+        setBursts((b) => [...b, id]);
+        window.setTimeout(
+          () => setBursts((b) => b.filter((x) => x !== id)),
+          1350
+        );
+        setBounce(true);
+        window.setTimeout(() => setBounce(false), 460);
+      }
+      return next;
+    });
+  };
+
   return (
     <div
-      className={`relative flex flex-col items-center rounded-2xl border border-white/60 bg-gradient-to-br ${tint} to-white p-3.5 text-center shadow-[0_4px_16px_rgba(15,23,42,0.05)]`}
+      className={[
+        "relative flex flex-col items-center rounded-2xl border border-white/60 bg-gradient-to-br p-3.5 text-center shadow-[0_4px_16px_rgba(15,23,42,0.05)]",
+        tint,
+        "to-white",
+        bounce ? "lv-card-bounce" : "",
+      ].join(" ")}
     >
-      {xp != null && (
+      {/* +XP blob burst — green splat, same as the bonus card */}
+      {bursts.map((id) => (
+        <span
+          key={id}
+          aria-hidden="true"
+          className="lv-blob lv-xp-num pointer-events-none absolute left-1/2 top-1/2 z-30 flex items-center justify-center whitespace-nowrap px-3.5 py-2 text-base font-extrabold leading-none text-white shadow-lg"
+          style={{
+            backgroundColor: "#4caf7d",
+            borderRadius: "60% 40% 55% 45% / 45% 55% 40% 60%",
+          }}
+        >
+          +{xp} XP
+        </span>
+      ))}
+
+      {/* +XP incentive pill — shown until the habit is completed */}
+      {!checked && (
         <span className="absolute left-2 top-2 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-sm">
           +{xp} XP
         </span>
       )}
-      <span className="absolute right-2 top-2">
+
+      {/* Toggle button (was a static checkbox) */}
+      <button
+        type="button"
+        onClick={toggle}
+        aria-pressed={checked}
+        aria-label={`Mark ${title} complete`}
+        className="absolute right-2 top-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+      >
         <Checkbox checked={checked} />
-      </span>
+      </button>
 
       <div className="mt-3">
         <IconTile from={from} to={to}>
@@ -203,7 +265,9 @@ function AeroProtocolCard() {
             Aero Protocol
           </span>
         </div>
-        <span className="text-xs text-slate-500">Total: 0m</span>
+        <span className="text-xs text-slate-500">
+          Total: <span className="font-bold text-slate-700">110m</span>
+        </span>
       </div>
 
       <div className="mt-4 flex items-center justify-between">
@@ -212,10 +276,10 @@ function AeroProtocolCard() {
           <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-bold text-rose-500">
             +2 XP
           </span>
-          <div className="flex h-11 w-20 items-center justify-center rounded-xl border border-slate-200 bg-white text-2xl font-bold text-slate-800">
-            0
+          <div className="flex h-11 w-20 items-center justify-center rounded-xl border border-slate-200 bg-white text-2xl font-bold text-slate-800 shadow-sm">
+            110
           </div>
-          <span className="text-sm text-rose-400">min</span>
+          <span className="text-sm font-medium text-rose-400">min</span>
         </div>
       </div>
 
@@ -223,15 +287,19 @@ function AeroProtocolCard() {
         <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
           Effectiveness
         </span>
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-bold text-rose-500">
-            +1 XP
-          </span>
-          <span className="text-sm font-medium text-slate-500">0%</span>
-        </div>
+        <span className="text-sm font-bold text-slate-700">86%</span>
       </div>
-      <div className="mt-2 h-2 w-full rounded-full bg-rose-100">
-        <div className="h-2 w-0 rounded-full bg-gradient-to-r from-rose-400 to-rose-500" />
+
+      {/* Slider-style bar: filled red→pink gradient + raised white thumb */}
+      <div className="relative mt-3 h-2.5 w-full rounded-full bg-rose-100">
+        <div
+          className="absolute left-0 top-0 h-2.5 rounded-full bg-gradient-to-r from-red-500 to-rose-400"
+          style={{ width: "86%" }}
+        />
+        <div
+          className="absolute top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border border-rose-100 bg-white shadow-[0_2px_6px_rgba(225,29,72,0.35)]"
+          style={{ left: "86%" }}
+        />
       </div>
     </div>
   );
@@ -267,11 +335,17 @@ const S = (p) => ({
   ...p,
 });
 
-function LeafIcon({ className = "h-5 w-5" }) {
+function AppleIcon({ className = "h-5 w-5" }) {
   return (
-    <svg {...S({ className })}>
-      <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
-      <path d="M2 21c0-3 1.85-5.36 5.08-6" />
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className={className}>
+      <path d="M12 7.9C10.9 5.6 8.4 4.8 6.6 6 4.6 7.3 4.2 10.3 5.4 13c.7 1.6 1 3.1.6 4.7-.2.9.1 1.9.9 2.5.7.6 1.7.6 2.4.2.5-.3 1.1-.3 1.6 0 .7.4 1.7.4 2.4-.2.8-.6 1.1-1.6.9-2.5-.4-1.6-.1-3.1.6-4.7 1.2-2.7.8-5.7-1.2-7-1.8-1.2-4.3-.4-5.4 1.9Z" />
+      <path
+        d="M12 7.9c.1-1.7 1.4-3 3.1-3.3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -285,11 +359,18 @@ function HandIcon({ className = "h-5 w-5" }) {
     </svg>
   );
 }
-function DropletPlusIcon({ className = "h-5 w-5" }) {
+function TongueIcon({ className = "h-5 w-5" }) {
   return (
-    <svg {...S({ className })}>
-      <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5S5 13 5 15a7 7 0 0 0 7 7Z" />
-      <path d="M12 11v5M9.5 13.5h5" />
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className={className}>
+      <path d="M6 5h12c.6 0 1 .5 1 1.1 0 1.4-.5 2.6-1.3 3.4.2.5.3 1 .3 1.6a6 6 0 0 1-12 0c0-.6.1-1.1.3-1.6C5.5 8.7 5 7.5 5 6.1 5 5.5 5.4 5 6 5Z" />
+      <path
+        d="M12 11.5V17"
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        opacity="0.55"
+      />
     </svg>
   );
 }
