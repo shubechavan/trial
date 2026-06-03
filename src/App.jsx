@@ -254,6 +254,9 @@ function MetricCard({ icon, from, to, tint, value, unit, title, desc }) {
 }
 
 function AeroProtocolCard() {
+  const [minutes, setMinutes] = useState(0);
+  const [effectiveness, setEffectiveness] = useState(0);
+
   return (
     <div className="rounded-3xl border border-rose-100/80 bg-gradient-to-br from-rose-50 to-white p-5 shadow-[0_6px_24px_rgba(244,63,94,0.08)]">
       <div className="flex items-center justify-between">
@@ -266,7 +269,7 @@ function AeroProtocolCard() {
           </span>
         </div>
         <span className="text-xs text-slate-500">
-          Total: <span className="font-bold text-slate-700">110m</span>
+          Total: <span className="font-bold text-slate-700">{minutes}m</span>
         </span>
       </div>
 
@@ -276,9 +279,14 @@ function AeroProtocolCard() {
           <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-bold text-rose-500">
             +2 XP
           </span>
-          <div className="flex h-11 w-20 items-center justify-center rounded-xl border border-slate-200 bg-white text-2xl font-bold text-slate-800 shadow-sm">
-            110
-          </div>
+          <input
+            type="number"
+            min={0}
+            value={minutes}
+            onChange={(e) => setMinutes(Math.max(0, Number(e.target.value) || 0))}
+            aria-label="Minutes"
+            className="h-11 w-20 rounded-xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-800 shadow-sm outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-200 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+          />
           <span className="text-sm font-medium text-rose-400">min</span>
         </div>
       </div>
@@ -287,20 +295,27 @@ function AeroProtocolCard() {
         <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
           Effectiveness
         </span>
-        <span className="text-sm font-bold text-slate-700">86%</span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-bold text-rose-500">
+            +1 XP
+          </span>
+          <span className="text-sm font-bold text-slate-700">{effectiveness}%</span>
+        </div>
       </div>
 
-      {/* Slider-style bar: filled red→pink gradient + raised white thumb */}
-      <div className="relative mt-3 h-2.5 w-full rounded-full bg-rose-100">
-        <div
-          className="absolute left-0 top-0 h-2.5 rounded-full bg-gradient-to-r from-red-500 to-rose-400"
-          style={{ width: "86%" }}
-        />
-        <div
-          className="absolute top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border border-rose-100 bg-white shadow-[0_2px_6px_rgba(225,29,72,0.35)]"
-          style={{ left: "86%" }}
-        />
-      </div>
+      {/* Draggable slider — thumb moves and fill follows as you slide it */}
+      <input
+        type="range"
+        min={0}
+        max={100}
+        value={effectiveness}
+        onChange={(e) => setEffectiveness(Number(e.target.value))}
+        aria-label="Effectiveness"
+        className="lv-range mt-3 w-full"
+        style={{
+          background: `linear-gradient(to right, #ef4444 0%, #fb7185 ${effectiveness}%, #ffe4e6 ${effectiveness}%, #ffe4e6 100%)`,
+        }}
+      />
     </div>
   );
 }

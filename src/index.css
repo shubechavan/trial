@@ -28,6 +28,37 @@ body {
 .lv-card-bounce { animation: lv-card-bounce 440ms cubic-bezier(0.34, 1.56, 0.64, 1); }
 .lv-xp-num      { text-shadow: 0 1px 3px rgba(0,0,0,0.28); }
 
+/* ---- Interactive effectiveness slider (range input) ---- */
+.lv-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 10px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+}
+.lv-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid #fecdd3;
+  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.35);
+  cursor: grab;
+}
+.lv-range::-webkit-slider-thumb:active { cursor: grabbing; }
+.lv-range::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid #fecdd3;
+  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.35);
+  cursor: grab;
+}
+
 @keyframes lv-blob-rm {
   0% { opacity: 0; } 20% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; }
 }
