@@ -145,7 +145,6 @@ export default function App() {
               from="#38bdf8"
               to="#3b82f6"
               tint="from-sky-100 to-blue-50"
-              value="0"
               unit="L"
               title="WATER"
               desc="Log daily hydration in liters"
@@ -155,7 +154,6 @@ export default function App() {
               from="#a78bfa"
               to="#8b5cf6"
               tint="from-violet-100 to-purple-50"
-              value="0"
               unit="min"
               title="MEDITATION"
               desc="Daily mindfulness practice"
@@ -278,17 +276,63 @@ function HabitCard({
   );
 }
 
-function MetricCard({ icon, from, to, tint, value, unit, title, desc }) {
+function MetricCard({ icon, from, to, tint, unit, title, desc, xp = 4 }) {
+  const [value, setValue] = useState("");
+  const [awarded, setAwarded] = useState(false);
+  const [bursts, setBursts] = useState([]);
+  const idRef = useRef(0);
+
+  const fireBurst = () => {
+    const id = idRef.current++;
+    setBursts((b) => [...b, id]);
+    window.setTimeout(() => setBursts((b) => b.filter((x) => x !== id)), 1350);
+  };
+
+  // Award once the logged value first becomes positive.
+  const commit = () => {
+    const n = Number(value) || 0;
+    if (n > 0 && !awarded) {
+      setAwarded(true);
+      fireBurst();
+    } else if (n <= 0) {
+      setAwarded(false);
+    }
+  };
+
   return (
     <div
-      className={`rounded-3xl border border-white/60 bg-gradient-to-br ${tint} p-4 shadow-[0_6px_20px_rgba(15,23,42,0.06)]`}
+      className={`relative rounded-3xl border border-white/60 bg-gradient-to-br ${tint} p-4 shadow-[0_6px_20px_rgba(15,23,42,0.06)]`}
     >
-      <IconTile from={from} to={to} size="h-12 w-12">
-        {icon}
-      </IconTile>
+      {/* +XP confetti burst on logging */}
+      {bursts.map((id) => (
+        <XpConfetti key={id} xp={xp} />
+      ))}
+
+      <div className="flex items-start justify-between">
+        <IconTile from={from} to={to} size="h-12 w-12">
+          {icon}
+        </IconTile>
+        {!awarded && (
+          <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+            +{xp} XP
+          </span>
+        )}
+      </div>
+
       <div className="mt-4 text-center">
         <div className="flex items-end justify-center gap-1">
-          <span className="text-3xl font-bold text-slate-400">{value}</span>
+          <input
+            type="number"
+            min={0}
+            inputMode="decimal"
+            value={value}
+            placeholder="0"
+            onChange={(e) => setValue(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+            aria-label={`Log ${title}`}
+            className="w-16 bg-transparent text-center text-3xl font-bold text-slate-700 outline-none placeholder:text-slate-400 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+          />
           <span className="mb-1 text-sm font-medium text-slate-500">{unit}</span>
         </div>
         <div className="mt-1 text-sm font-bold tracking-wide text-slate-700">
