@@ -26,10 +26,10 @@ import React, { useState, useRef, useCallback } from "react";
 /* ------------------------------------------------------------------ */
 
 const TIERS = {
-  keystone: { label: "KEYSTONE", xp: 50, accent: "#d4a017" }, // gold
-  ultra: { label: "ULTRA", xp: 35, accent: "#2a9d8f" }, // teal
-  high: { label: "HIGH", xp: 20, accent: "#7c6bc9" }, // purple
-  standard: { label: "STANDARD", xp: 10, accent: "#4caf7d" }, // green
+  keystone: { label: "KEYSTONE", xp: 50, accent: "#d4a017", accentLight: "#f0d27a" }, // gold
+  ultra: { label: "ULTRA", xp: 35, accent: "#2a9d8f", accentLight: "#6fc7bc" }, // teal
+  high: { label: "HIGH", xp: 20, accent: "#7c6bc9", accentLight: "#b3a8e0" }, // purple
+  standard: { label: "STANDARD", xp: 10, accent: "#4caf7d", accentLight: "#8fd9b3" }, // green
 };
 
 /* Demo tasks (toggleable preview state) */
@@ -149,9 +149,13 @@ export default function BonusTrackerCard() {
       {/* CARD */}
       <div
         className={[
-          "relative rounded-3xl border border-slate-200/80 bg-white p-5 shadow-[0_6px_24px_rgba(15,23,42,0.06)] sm:p-6",
+          "relative rounded-3xl border border-slate-200/80 p-5 shadow-[0_6px_24px_rgba(15,23,42,0.06)] sm:p-6",
           status === "done" ? "lv-card-bounce" : "",
         ].join(" ")}
+        style={{
+          // soft tier-tinted card background, matching the pastel habit cards
+          background: `linear-gradient(135deg, #ffffff 55%, ${tier.accent}12 100%)`,
+        }}
       >
         {/* Blob splat — centered, full opacity (sits above the muted content) */}
         {bursts.map((b) => (
@@ -175,27 +179,40 @@ export default function BonusTrackerCard() {
             muted ? "opacity-70 saturate-[0.85]" : "",
           ].join(" ")}
         >
-          {/* Header: tier label + XP pill */}
-          <div className="flex items-start justify-between gap-3">
-            <span
-              className="text-[11px] font-bold uppercase tracking-[0.15em]"
-              style={{ color: tier.accent }}
+          {/* Header: gradient icon tile + tier label/name, XP pill top-right */}
+          <div className="flex items-start gap-3.5">
+            {/* Gradient icon tile, matching the habit-card icons */}
+            <div
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-[0_6px_14px_-3px_rgba(0,0,0,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)]"
+              style={{
+                background: `linear-gradient(160deg, ${tier.accentLight} 0%, ${tier.accent} 100%)`,
+              }}
             >
-              {tier.label} BONUS
-            </span>
+              <SparklesIcon className="h-6 w-6" />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <span
+                className="text-[11px] font-bold uppercase tracking-[0.15em]"
+                style={{ color: tier.accent }}
+              >
+                {tier.label} BONUS
+              </span>
+              <h3 className="mt-0.5 text-lg font-bold leading-snug text-slate-800">
+                {task.name}
+              </h3>
+            </div>
+
             <span
-              className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold text-white shadow-sm"
+              className="inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-bold text-white shadow-sm"
               style={{ backgroundColor: tier.accent }}
             >
               +{tier.xp} XP
             </span>
           </div>
 
-          {/* Body: task name + description */}
-          <h3 className="mt-3 text-lg font-bold leading-snug text-slate-800">
-            {task.name}
-          </h3>
-          <p className="mt-1 text-sm leading-relaxed text-slate-500">
+          {/* Description */}
+          <p className="mt-3 text-sm leading-relaxed text-slate-500">
             {task.description}
           </p>
 
@@ -273,6 +290,18 @@ function CheckIcon({ className = "", strokeWidth = 2.5 }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+function SparklesIcon({ className = "" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 3l1.8 4.9L18.7 9.7 13.8 11.5 12 16.4 10.2 11.5 5.3 9.7 10.2 7.9 12 3z"
+        fill="currentColor"
+      />
+      <path d="M18.5 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" fill="currentColor" opacity="0.85" />
     </svg>
   );
 }
