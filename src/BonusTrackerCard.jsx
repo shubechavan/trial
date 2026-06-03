@@ -102,9 +102,12 @@ const STYLE = `
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export default function BonusTrackerCard() {
+export default function BonusTrackerCard({ task: taskProp }) {
+  // Controlled mode: a real engine-selected task is passed in. Otherwise the
+  // card runs its self-contained demo (with the tier toggle at the bottom).
+  const controlled = Boolean(taskProp);
   const [demoIndex, setDemoIndex] = useState(0);
-  const task = DEMO_TASKS[demoIndex];
+  const task = controlled ? taskProp : DEMO_TASKS[demoIndex];
   const tier = TIERS[task.tier];
 
   // status: "idle" | "pending" | "done"
@@ -275,7 +278,7 @@ export default function BonusTrackerCard() {
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 py-3 text-sm font-medium text-amber-700"
             >
               <ClockIcon className="h-4 w-4 shrink-0" />
-              Confirm tomorrow morning
+              {task.confirm || "Confirm tomorrow morning"}
             </div>
           )}
 
@@ -293,25 +296,27 @@ export default function BonusTrackerCard() {
         </div>
       </div>
 
-      {/* Demo tier toggle — subtle, testing only */}
-      <div className="mt-2 flex items-center justify-center gap-3 opacity-30 transition-opacity hover:opacity-100">
-        <button
-          type="button"
-          onClick={cycleDemo}
-          className="text-[11px] text-slate-400 underline underline-offset-2"
-        >
-          demo · switch to {nextLabel.toLowerCase()}
-        </button>
-        {status !== "idle" && (
+      {/* Demo tier toggle — subtle, testing only (hidden when engine-driven) */}
+      {!controlled && (
+        <div className="mt-2 flex items-center justify-center gap-3 opacity-30 transition-opacity hover:opacity-100">
           <button
             type="button"
-            onClick={resetDemo}
+            onClick={cycleDemo}
             className="text-[11px] text-slate-400 underline underline-offset-2"
           >
-            reset
+            demo · switch to {nextLabel.toLowerCase()}
           </button>
-        )}
-      </div>
+          {status !== "idle" && (
+            <button
+              type="button"
+              onClick={resetDemo}
+              className="text-[11px] text-slate-400 underline underline-offset-2"
+            >
+              reset
+            </button>
+          )}
+        </div>
+      )}
     </section>
   );
 }

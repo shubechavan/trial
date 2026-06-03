@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo } from "react";
 import BonusTrackerCard from "./BonusTrackerCard.jsx";
+import { getMonthBonuses } from "./bonusEngine.js";
 
 /* Shared confetti XP burst: bold "+XP" text rises while specks erupt upward. */
 function XpConfetti({ xp, color = "#4caf7d", colorLight = "#8fd9b3" }) {
@@ -60,18 +61,50 @@ function XpConfetti({ xp, color = "#4caf7d", colorLight = "#8fd9b3" }) {
 /* ================================================================== */
 
 export default function App() {
+  const [view, setView] = useState("dashboard");
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="mx-auto max-w-2xl space-y-4">
-        {/* Page header */}
+        {/* Page header + view tabs */}
         <header className="px-1 pb-1">
           <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-700">
             The Levi System
           </div>
-          <h1 className="font-serif text-4xl font-bold text-slate-900">Dashboard</h1>
+          <h1 className="font-serif text-4xl font-bold text-slate-900">
+            {view === "dashboard" ? "Dashboard" : "Bonus Engine"}
+          </h1>
+          <div className="mt-3 inline-flex rounded-xl bg-slate-100 p-1 text-sm font-semibold">
+            <button
+              type="button"
+              onClick={() => setView("dashboard")}
+              className={`rounded-lg px-4 py-1.5 transition ${
+                view === "dashboard" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"
+              }`}
+            >
+              Dashboard
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("engine")}
+              className={`rounded-lg px-4 py-1.5 transition ${
+                view === "engine" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"
+              }`}
+            >
+              Bonus Engine
+            </button>
+          </div>
         </header>
 
-        {/* AERO PROTOCOL */}
+        {view === "engine" ? <BonusEngineDemo /> : <Dashboard />}
+      </div>
+    </div>
+  );
+}
+
+function Dashboard() {
+  return (
+    <div className="space-y-4">
+      {/* AERO PROTOCOL */}
         <AeroProtocolCard />
 
         {/* Locked module */}
@@ -161,9 +194,147 @@ export default function App() {
           </div>
         </section>
 
-        {/* Analysis Journal */}
-        <AnalysisJournalCard />
+      {/* Analysis Journal */}
+      <AnalysisJournalCard />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Bonus Engine demo — drives the card with REAL selected tasks       */
+/* ------------------------------------------------------------------ */
+
+const TIER_TONE = {
+  keystone: "bg-amber-100 text-amber-700",
+  ultra: "bg-teal-100 text-teal-700",
+  high: "bg-violet-100 text-violet-700",
+  standard: "bg-emerald-100 text-emerald-700",
+};
+
+function BonusEngineDemo() {
+  const [userId, setUserId] = useState("levi");
+  const [monthIndex, setMonthIndex] = useState(0);
+  const [day, setDay] = useState(null);
+
+  const schedule = useMemo(
+    () => getMonthBonuses(userId, monthIndex),
+    [userId, monthIndex]
+  );
+
+  const selectedDay = day ?? schedule[0]?.day;
+  const selected = schedule.find((b) => b.day === selectedDay) || schedule[0];
+  const task = selected
+    ? {
+        tier: selected.tier,
+        name: selected.task.name,
+        description: selected.task.description,
+        delayed: selected.task.delayed,
+        confirm: selected.task.confirm,
+      }
+    : null;
+
+  const setMonth = (next) => {
+    setMonthIndex(Math.max(0, next));
+    setDay(null);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Explainer + controls */}
+      <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
+        <p className="text-sm leading-relaxed text-slate-600">
+          The real selection engine from the handoff spec — deterministic,
+          seeded per <strong>user&nbsp;+&nbsp;month</strong>. Month&nbsp;1 places
+          the <strong>Keystone on day&nbsp;10</strong>; later months rotate one
+          Ultra + one High (with 8- and 6-month cooldowns) and draw 5 Standard
+          tasks without replacement until the 30-task bag resets. 7 bonus days
+          per month, one bonus per day.
+        </p>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-sm text-slate-600">
+            User&nbsp;ID
+            <input
+              value={userId}
+              onChange={(e) => {
+                setUserId(e.target.value || "levi");
+                setDay(null);
+              }}
+              className="w-28 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-teal-300 focus:ring-2 focus:ring-teal-100"
+            />
+          </label>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMonth(monthIndex - 1)}
+              disabled={monthIndex === 0}
+              className="h-8 w-8 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40"
+            >
+              ‹
+            </button>
+            <span className="text-sm font-bold text-slate-700">
+              Month {monthIndex + 1}
+            </span>
+            <button
+              type="button"
+              onClick={() => setMonth(monthIndex + 1)}
+              className="h-8 w-8 rounded-lg border border-slate-200 text-slate-600"
+            >
+              ›
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* This month's 7 bonus days */}
+      <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
+        <div className="mb-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          Bonus days this month · tap one to load it
+        </div>
+        <ul className="space-y-1.5">
+          {schedule.map((b) => {
+            const active = b.day === selectedDay;
+            return (
+              <li key={b.day}>
+                <button
+                  type="button"
+                  onClick={() => setDay(b.day)}
+                  className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition ${
+                    active
+                      ? "border-teal-300 bg-teal-50"
+                      : "border-transparent hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="w-12 shrink-0 text-sm font-bold text-slate-700">
+                    Day {b.day}
+                  </span>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${TIER_TONE[b.tier]}`}
+                  >
+                    {b.tier} · {b.xp}xp
+                  </span>
+                  <span className="truncate text-sm text-slate-600">
+                    {b.task.name}
+                  </span>
+                  {b.task.delayed && (
+                    <span className="ml-auto shrink-0 text-[10px] font-semibold text-amber-600">
+                      ⏳ delayed
+                    </span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      {/* The actual card, driven by the engine-selected task */}
+      {task && (
+        <BonusTrackerCard
+          key={`${userId}-${monthIndex}-${selectedDay}`}
+          task={task}
+        />
+      )}
     </div>
   );
 }
